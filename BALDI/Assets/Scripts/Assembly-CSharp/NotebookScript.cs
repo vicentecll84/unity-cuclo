@@ -42,9 +42,25 @@ public class NotebookScript : MonoBehaviour
 				this.respawnTime = 120f;
 				this.gc.CollectNotebook();
 				GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(this.learningGame);
-				gameObject.GetComponent<MathGameScript>().gc = this.gc;
-				gameObject.GetComponent<MathGameScript>().baldiScript = this.bsc;
-				gameObject.GetComponent<MathGameScript>().playerPosition = this.player.position;
+				if (noMath)
+				{
+					if (bsc.isActiveAndEnabled & gc.style == "glitch") bsc.Hear(this.player.position, 7f);
+					if (gc.notebooks == 2)
+					{
+						gc.ActivateSpoopMode();
+					}
+					if (gc.notebooks >= 2)
+					{
+						bsc.GetAngry(0.5f);
+					}
+					gc.DeactivateLearningGame(gameObject);
+				}
+				else
+				{
+					gameObject.GetComponent<MathGameScript>().gc = this.gc;
+					gameObject.GetComponent<MathGameScript>().baldiScript = this.bsc;
+					gameObject.GetComponent<MathGameScript>().playerPosition = this.player.position;
+				}
 			}
 		}
 	}
@@ -63,6 +79,8 @@ public class NotebookScript : MonoBehaviour
 
 	// Token: 0x0400066E RID: 1646
 	public bool up;
+
+	public bool noMath;
 
 	// Token: 0x0400066F RID: 1647
 	public Transform player;

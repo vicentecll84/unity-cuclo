@@ -1,5 +1,5 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.SceneManagement;
 
 // Token: 0x020000D5 RID: 213
 public class YouWonScript : MonoBehaviour
@@ -8,6 +8,10 @@ public class YouWonScript : MonoBehaviour
 	private void Start()
 	{
 		this.delay = 10f;
+		if (PlayerPrefs.GetInt("NullDefeated") == 0)
+		{
+			device.Play();
+		}
 	}
 
 	// Token: 0x060009E9 RID: 2537 RVA: 0x00026797 File Offset: 0x00024B97
@@ -16,10 +20,12 @@ public class YouWonScript : MonoBehaviour
 		this.delay -= Time.deltaTime;
 		if (this.delay <= 0f)
 		{
-			Application.Quit();
+			SceneManager.LoadScene("MainMenu");
 		}
 	}
 
 	// Token: 0x0400071A RID: 1818
 	private float delay;
+
+	public AudioSource device;
 }

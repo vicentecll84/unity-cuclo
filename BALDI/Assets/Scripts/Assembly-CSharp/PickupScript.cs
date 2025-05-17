@@ -8,7 +8,7 @@ public class PickupScript : MonoBehaviour
 	// Token: 0x060009C9 RID: 2505 RVA: 0x000255EF File Offset: 0x000239EF
 	private void Start()
 	{
-		//this.playerInput = ReInput.players.GetPlayer(0);
+		//this.playerInput = ReInput.players.GetPlayer(0);.
 	}
 
 	// Token: 0x060009CA RID: 2506 RVA: 0x00025604 File Offset: 0x00023A04
@@ -69,6 +69,16 @@ public class PickupScript : MonoBehaviour
 				{
 					raycastHit.transform.gameObject.SetActive(false);
 					this.gc.CollectItem(10);
+				}
+				else if (raycastHit.transform.name == "Pickup_Whistle" & Vector3.Distance(this.player.position, base.transform.position) < 10f)
+				{
+					raycastHit.transform.gameObject.SetActive(false);
+					this.gc.CollectItem(11);
+				}
+				else if (raycastHit.transform.name == "Pickup_ChalkEraser" & Vector3.Distance(this.player.position, base.transform.position) < 10f)
+				{
+				    raycastHit.transform.gameObject.SetActive(false);
+				    this.gc.CollectItem(12);
 				}
 			}
 		}

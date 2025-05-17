@@ -6,6 +6,7 @@ using UnityEngine.SceneManagement;
 // Token: 0x020000D4 RID: 212
 public class WarningScreenScript : MonoBehaviour
 {
+
 	// Token: 0x060009E5 RID: 2533 RVA: 0x00026753 File Offset: 0x00024B53
 	private void Start()
 	{

@@ -1759,7 +1759,7 @@ MonoBehaviour:
   bal_equals: {fileID: 8300000, guid: b31ebb0fc77ac05448b9e76637d4bbcb, type: 3}
   bal_howto: {fileID: 8300000, guid: f4b92ba06ae550e48a0ce9b0d7befbca, type: 3}
   bal_intro: {fileID: 8300000, guid: 97197e75b0d13b740a582f1c2d4858d9, type: 3}
-  bal_screech: {fileID: 8300000, guid: 136776f62eb733a46b4ad3d162612aac, type: 3}
+  bal_screech: {fileID: 8300000, guid: 41b9637c33e9d0141a9912054a0dda01, type: 3}
   bal_numbers:
   - {fileID: 8300000, guid: b2887fc8f9f2aa847b7637b116893ee7, type: 3}
   - {fileID: 8300000, guid: 8dcbcee5b8898364c8a8db27ce0e8151, type: 3}

@@ -49,11 +49,25 @@ public class FirstPrizeScript : MonoBehaviour
 			this.crazyTime -= Time.deltaTime;
 		}
 		this.motorAudio.pitch = (this.agent.velocity.magnitude + 1f) * Time.timeScale;
-		//if (this.prevSpeed - this.agent.velocity.magnitude > 15f)
-		//{
-		//	this.audioDevice.PlayOneShot(this.audBang);
-		//}
-		//this.prevSpeed = this.agent.velocity.magnitude;
+		foreach (WindowScript w in FindObjectsOfType<WindowScript>())
+		{
+            if (!w.broken)
+            {
+                if (Vector3.Distance(transform.position, w.transform.position) < 5)
+                {
+					if (this.prevSpeed - this.agent.velocity.magnitude > 15f)
+					{
+						GameControllerScript gc = GameObject.FindWithTag("GameController").GetComponent<GameControllerScript>();
+						if (gc.baldiScrpt.isActiveAndEnabled & !w.broken)
+						{
+							gc.baldiScrpt.Hear(w.transform.position, 7f); //If the door isn't silent, Baldi hears the door with a priority of 1.
+						}
+						w.BreakWindow();
+					}
+                }
+            }
+		}
+		this.prevSpeed = this.agent.velocity.magnitude;
 	}
 
 	// Token: 0x06000035 RID: 53 RVA: 0x00002E60 File Offset: 0x00001260

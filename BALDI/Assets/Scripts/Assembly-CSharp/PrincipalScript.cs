@@ -32,6 +32,10 @@ public class PrincipalScript : MonoBehaviour
 		{
 			this.timeSeenRuleBreak = 0f;
 		}
+		if (summon)
+		{
+			TargetPlayer();
+		}
 		if (this.coolDown > 0f)
 		{
 			this.coolDown -= 1f * Time.deltaTime;
@@ -125,12 +129,24 @@ public class PrincipalScript : MonoBehaviour
 		}
 	}
 
+	public void Summoned()
+	{
+		this.agent.speed = 100f;
+		this.TargetPlayer();
+		this.summon = true;
+	}
+
 	// Token: 0x060009C3 RID: 2499 RVA: 0x0002539C File Offset: 0x0002379C
 	private void OnTriggerStay(Collider other)
 	{
 		if (other.name == "Office Trigger")
 		{
 			this.inOffice = true;
+		}
+		if (other.name == "Player" & this.summon)
+		{
+			this.summon = false;
+			this.agent.speed = 30f;
 		}
 		if (other.tag == "Player" & this.angry & !this.inOffice)
 		{
@@ -214,6 +230,8 @@ public class PrincipalScript : MonoBehaviour
 	// Token: 0x040006C5 RID: 1733
 	public bool inOffice;
 
+	private bool summon;
+
 	// Token: 0x040006C6 RID: 1734
 	private int detentions;
 
@@ -267,10 +285,10 @@ public class PrincipalScript : MonoBehaviour
 	private NavMeshAgent agent;
 
 	// Token: 0x040006D5 RID: 1749
-	private AudioQueueScript audioQueue;
+	public AudioQueueScript audioQueue;
 
 	// Token: 0x040006D6 RID: 1750
-	private AudioSource audioDevice;
+	public AudioSource audioDevice;
 
 	// Token: 0x040006D7 RID: 1751
 	public AudioSource quietAudioDevice;

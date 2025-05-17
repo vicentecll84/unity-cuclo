@@ -10,17 +10,35 @@ public class BaldiScript : MonoBehaviour
 	{
 		this.baldiAudio = base.GetComponent<AudioSource>(); //Get The Baldi Audio Source(Used mostly for the slap sound)
 		this.agent = base.GetComponent<NavMeshAgent>(); //Get the Nav Mesh Agent
+		this.baldiRenderer = base.GetComponentInChildren<SpriteRenderer>();
 		this.timeToMove = this.baseTime; //Sets timeToMove to baseTime
 		this.Wander(); //Start wandering
 		if (PlayerPrefs.GetInt("Rumble") == 1)
 		{
 			this.rumble = true;
 		}
+		if (gc.style == "glitch")
+		{
+			if (PlayerPrefs.GetInt("NullDefeated") >= 1)
+			{
+				baldiAnimator.enabled = false;
+				baldiRenderer.sprite = baldloonSprite;
+			}
+			else
+			{
+				Nsprite.SetActive(true);
+				baldiRenderer.enabled = false;
+			}
+		}
 	}
 
 	// Token: 0x060009A4 RID: 2468 RVA: 0x000245C4 File Offset: 0x000229C4
 	private void Update()
 	{
+		if (summon)
+		{
+			TargetPlayer();
+		}
 		if (this.timeToMove > 0f) //If timeToMove is greater then 0, decrease it
 		{
 			this.timeToMove -= 1f * Time.deltaTime;
@@ -62,6 +80,69 @@ public class BaldiScript : MonoBehaviour
 				this.angerRate += this.angerRateRate; //Increase angerRate for next time
 			}
 		}
+		if (gc.style == "glitch")
+		{
+			foreach (WindowScript w in FindObjectsOfType<WindowScript>())
+			{
+                if (!w.broken)
+                {
+                    if (Vector3.Distance(transform.position, w.transform.position) < 5)
+                    {
+                        w.BreakWindow();
+						if (UnityEngine.Random.Range(0, 100) <= 3)
+						{
+							if (gc.style == "glitch" & PlayerPrefs.GetInt("NullDefeated") == 0)
+							{
+							if (!baldiAudio.isPlaying)
+							{
+								this.baldiAudio.PlayOneShot(this.speech[0]);
+							}
+							}
+						}
+                    }
+                }
+			}
+
+
+
+			if (PlayerPrefs.GetInt("NullDefeated") == 0)
+			{
+				if (nullSpeechTimer > 0f)
+				{
+					this.nullSpeechTimer -= Time.deltaTime;
+				}
+				else
+				{
+					nullSpeechTimer = UnityEngine.Random.Range(30f, 60f);
+					int index = UnityEngine.Random.Range(1, speech.Length);
+					if (index == 1)
+					{
+						if (Vector3.Distance(this.player.position, base.transform.position) > 120f & !db)
+						{
+							if (!baldiAudio.isPlaying) baldiAudio.PlayOneShot(this.speech[1]);
+						}
+					}
+					if (index == 2)
+					{
+						if (gc.gameTime > 250f)
+						{
+							if (!baldiAudio.isPlaying) baldiAudio.PlayOneShot(this.speech[2]);
+						}
+					}
+					if (index == 3)
+					{
+						if (gc.item[0] == 0 & gc.item[1] == 0 & gc.item[2] == 0 & gc.player.stamina < 30f)
+						{
+							if (!baldiAudio.isPlaying) baldiAudio.PlayOneShot(this.speech[3]);
+						}
+					}
+					if (index >= 4)
+					{
+						if (!baldiAudio.isPlaying) baldiAudio.PlayOneShot(this.speech[index]);
+					}
+				}
+			}
+		}
 	}
 
 	// Token: 0x060009A5 RID: 2469 RVA: 0x000246F8 File Offset: 0x00022AF8
@@ -78,14 +159,17 @@ public class BaldiScript : MonoBehaviour
 		}
 		Vector3 direction = this.player.position - base.transform.position; 
 		RaycastHit raycastHit;
-		if (Physics.Raycast(base.transform.position + Vector3.up * 2f, direction, out raycastHit, float.PositiveInfinity, 769, QueryTriggerInteraction.Ignore) & raycastHit.transform.tag == "Player") //Create a raycast, if the raycast hits the player, Baldi can see the player
+		if (Physics.Raycast(base.transform.position + Vector3.up * 2f, direction, out raycastHit, float.PositiveInfinity, 769, QueryTriggerInteraction.Ignore)) //Create a raycast, if the raycast hits the player, Baldi can see the player
 		{
-			this.db = true;
-			this.TargetPlayer(); //Start attacking the player
-		}
-		else
-		{
-			this.db = false;
+			if (raycastHit.transform.tag == "Player")
+			{
+				this.db = true;
+				this.TargetPlayer();
+			}
+			else
+			{
+				this.db = false;
+			}
 		}
 	}
 
@@ -113,11 +197,21 @@ public class BaldiScript : MonoBehaviour
 		{
 			this.Wander();
 		}
-		this.moveFrames = 10f;
+		if (PlayerPrefs.GetString("CurrentStyle") != "glitch")
+		{
+			this.moveFrames = 10f;
+		}
+		else
+		{
+			this.moveFrames = 13f;
+		}
 		this.timeToMove = this.baldiWait - this.baldiTempAnger;
 		this.previous = base.transform.position; // Set previous to Baldi's current location
-		this.baldiAudio.PlayOneShot(this.slap); //Play the slap sound
-		this.baldiAnimator.SetTrigger("slap"); // Play the slap animation
+		if (PlayerPrefs.GetString("CurrentStyle") != "glitch")
+		{
+			this.baldiAudio.PlayOneShot(this.slap); //Play the slap sound
+			this.baldiAnimator.SetTrigger("slap"); // Play the slap animation
+		}
 		if (this.rumble)
 		{
 			float num = Vector3.Distance(base.transform.position, this.player.position);
@@ -152,6 +246,21 @@ public class BaldiScript : MonoBehaviour
 		{
 			this.agent.SetDestination(soundLocation); //Go to that sound
 			this.currentPriority = priority; //Set the current priority to the priority
+			if (baldicator != null && gc.spoopMode)
+			{
+				if (gc.style == "glitch")
+				{
+					baldicator.Play("BALDIC_Confused", 0, 0f);
+				}
+				else
+				{
+					baldicator.Play("BALDIC_Hear", 0, 0f);
+				}
+			}
+		}
+		else
+		{
+			baldicator.Play("BALDIC_Confused", 0, 0f);
 		}
 	}
 
@@ -162,6 +271,14 @@ public class BaldiScript : MonoBehaviour
 		this.antiHearing = true; //Set the antihearing variable to true for other scripts
 		this.antiHearingTime = t; //Set the time the tape's effect on baldi will last
 	}
+
+	public GameControllerScript gc;
+
+	public Sprite baldloonSprite;
+
+	public GameObject Nsprite;
+
+	[SerializeField] private Animator baldicator;
 
 	// Token: 0x0400067F RID: 1663
 	public bool db;
@@ -217,6 +334,8 @@ public class BaldiScript : MonoBehaviour
 	// Token: 0x04000690 RID: 1680
 	public bool endless;
 
+	public bool summon;
+
 	// Token: 0x04000691 RID: 1681
 	public Transform player;
 
@@ -228,6 +347,8 @@ public class BaldiScript : MonoBehaviour
 
 	// Token: 0x04000694 RID: 1684
 	private AudioSource baldiAudio;
+
+	public SpriteRenderer baldiRenderer;
 
 	// Token: 0x04000695 RID: 1685
 	public AudioClip slap;
@@ -248,6 +369,8 @@ public class BaldiScript : MonoBehaviour
 	private bool rumble;
 
 	// Token: 0x0400069B RID: 1691
-	private NavMeshAgent agent;
+	public NavMeshAgent agent;
+
+	private float nullSpeechTimer = 60f;
 
 }

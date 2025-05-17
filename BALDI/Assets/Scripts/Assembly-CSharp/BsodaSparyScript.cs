@@ -15,6 +15,10 @@ public class BsodaSparyScript : MonoBehaviour
 	// Token: 0x0600092B RID: 2347 RVA: 0x00020C5C File Offset: 0x0001F05C
 	private void Update()
 	{
+		if (base.gameObject.GetComponent<ProjectileScript>() != null)
+		{
+			this.speed += 2f;
+		}
 		this.rb.velocity = base.transform.forward * this.speed; //Move forward
 		this.lifeSpan -= Time.deltaTime; // Decrease the lifespan variable
 		if (this.lifeSpan < 0f) //When the lifespan timer ends, destroy the BSODA

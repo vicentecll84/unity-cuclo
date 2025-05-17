@@ -21,25 +21,70 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x06000964 RID: 2404 RVA: 0x00021AC4 File Offset: 0x0001FEC4
 	private void Start()
 	{
+		sceneName = SceneManager.GetActiveScene().name;
 		this.cullingMask = this.camera.cullingMask; // Changes cullingMask in the Camera
 		this.audioDevice = base.GetComponent<AudioSource>(); //Get the Audio Source
 		this.mode = PlayerPrefs.GetString("CurrentMode"); //Get the current mode
+		this.style = PlayerPrefs.GetString("CurrentStyle"); //Get the current style
+		this.schoolMusic.Play(); //Play the school music
+		if (style == "glitch" || PlayerPrefs.GetInt("FreeRun") >= 1)
+		{
+			if (sceneName != "Secret")
+			{
+				this.schoolMusic.Stop();
+				this.baldiTutor.SetActive(false);
+				foreach (NotebookScript notebook in Resources.FindObjectsOfTypeAll<NotebookScript>())
+				{
+				    notebook.noMath = true;
+				}
+			}
+		}
+		if (this.style == "glitch" && sceneName != "Secret") // If style isn't Glitch Style
+		{
+			this.mode = "story";
+			PlayerPrefs.SetInt("FreeRun", 0);
+			this.chalkErasers.SetActive(true);
+			baldiTutor.SetActive(false);
+			baldi.SetActive(true);
+			int mask = LayerMask.NameToLayer("Ignore Raycast");
+			foreach (GameObject window in GameObject.FindGameObjectsWithTag("Window"))
+			{
+                window.gameObject.layer = mask;
+			}
+			foreach (GameObject item in GameObject.FindGameObjectsWithTag("Item"))
+			{
+                if (item.name == "Pickup_SafetyScissors" || item.name == "Pickup_BigBoots")
+				{
+					UnityEngine.Object.Destroy(item, 0f);
+				}
+			}
+		}
 		if (this.mode == "endless") //If it is endless mode
 		{
 			this.baldiScrpt.endless = true; //Set Baldi use his slightly changed endless anger system
 		}
-		this.schoolMusic.Play(); //Play the school music
 		this.LockMouse(); //Prevent the mouse from moving
 		this.UpdateNotebookCount(); //Update the notebook count
 		this.itemSelected = 0; //Set selection to item slot 0(the first item slot)
-		this.gameOverDelay = 0.5f;
+		if (sceneName != "Secret")
+		{
+			if (this.style != "glitch")
+			{
+				this.gameOverDelay = 0.5f;
+			}
+			else
+			{
+				this.gameOverDelay = aud_spoop.length - 5;
+			}
+		}
 	}
 
 	// Token: 0x06000965 RID: 2405 RVA: 0x00021B5C File Offset: 0x0001FF5C
 	private void Update()
 	{
-		if (!this.learningActive)
+		if (!this.learningActive & !player.gameOver)
 		{
+			gameTime += Time.deltaTime;
 			if (Input.GetButtonDown("Pause"))
 			{
 				if (!this.gamePaused)
@@ -118,10 +163,41 @@ public class GameControllerScript : MonoBehaviour
 			Time.timeScale = 0f;
 			this.gameOverDelay -= Time.unscaledDeltaTime * 0.5f;
 			this.camera.farClipPlane = this.gameOverDelay * 400f; //Set camera farClip 
-			this.audioDevice.PlayOneShot(this.aud_buzz);
-			if (PlayerPrefs.GetInt("Rumble") == 1)
+			if (style == "glitch")
 			{
+				if (!Application.isEditor)
+				{
+				foreach (GameObject element in FindObjectsOfType<GameObject>())
+				{
+					if (element.name.StartsWith("Wall") ||
+                        element.name.StartsWith("Floor") ||
+						element.name.StartsWith("Window") ||
+                        element.name.StartsWith("Ceiling")
+                        )
+                    {
+						float range = 0.3f;
+						float _rand = UnityEngine.Random.Range(-range, range);
 
+						element.transform.position = new Vector3(
+							element.transform.position.x + _rand,
+							element.transform.position.y + _rand,
+							element.transform.position.z + _rand);
+					}
+				}
+				}
+				camera.fieldOfView += 0.09f;
+			}
+			if (!audioDevice.isPlaying)
+			{
+				if (this.style != "glitch")
+				{
+					int index = UnityEngine.Random.Range(0, aud_buzz.Length);
+					this.audioDevice.PlayOneShot(this.aud_buzz[index]);
+				}
+				else
+				{
+					this.audioDevice.PlayOneShot(this.aud_spoop);
+				}
 			}
 			if (this.gameOverDelay <= 0f)
 			{
@@ -134,12 +210,32 @@ public class GameControllerScript : MonoBehaviour
 					PlayerPrefs.SetInt("CurrentBooks", this.notebooks);
 				}
 				Time.timeScale = 1f;
-				SceneManager.LoadScene("GameOver");
+				if (this.style != "glitch")
+				{
+					SceneManager.LoadScene("GameOver");
+				}
+				else
+				{
+					if (Application.isEditor)
+					{
+						SceneManager.LoadScene("MainMenu");
+					}
+					else
+					{
+						Application.Quit();
+					}
+				}
 			}
 		}
-		if (this.finaleMode && !this.audioDevice.isPlaying && this.exitsReached == 3)
+		if (this.style != "glitch" && this.finaleMode && !this.audioDevice.isPlaying && this.exitsReached == 2)
 		{
-			this.audioDevice.clip = this.aud_MachineLoop;
+			this.audioDevice.clip = this.ChaosEarlyLoop;
+			this.audioDevice.loop = true;
+			this.audioDevice.Play();
+		}
+		if (this.style != "glitch" && this.finaleMode && !this.audioDevice.isPlaying && this.exitsReached == 3)
+		{
+			this.audioDevice.clip = this.ChaosFinalLoop;
 			this.audioDevice.loop = true;
 			this.audioDevice.Play();
 		}
@@ -196,21 +292,39 @@ public class GameControllerScript : MonoBehaviour
 			{
 				this.UnlockMouse();
 			}
+			AudioSource[] audios = GameObject.FindObjectsOfType<AudioSource>();
 			Time.timeScale = 0f;
 			this.gamePaused = true;
 			this.pauseMenu.SetActive(true);
+			if (sceneName != "Secret")
+			foreach (AudioSource audio in audios)
+			{
+			    audio.Pause();
+			}
 		}
 	}
 
 	// Token: 0x0600096B RID: 2411 RVA: 0x000220C5 File Offset: 0x000204C5
 	public void ExitGame()
 	{
+		if (this.style == "glitch" & sceneName != "Secret")
+		{
+			UnpauseGame();
+			this.baldi.SetActive(true);
+			this.baldiScrpt.agent.Warp(playerTransform.position);
+			return;
+		}
 		SceneManager.LoadScene("MainMenu");
 	}
 
 	// Token: 0x0600096C RID: 2412 RVA: 0x000220D1 File Offset: 0x000204D1
 	public void UnpauseGame()
 	{
+		AudioSource[] audios = GameObject.FindObjectsOfType<AudioSource>();
+        foreach (AudioSource audio in audios)
+        {
+            audio.UnPause();
+        }
 		Time.timeScale = 1f;
 		this.gamePaused = false;
 		this.pauseMenu.SetActive(false);
@@ -221,20 +335,29 @@ public class GameControllerScript : MonoBehaviour
 	public void ActivateSpoopMode()
 	{
 		this.spoopMode = true; //Tells the game its time for spooky
-		this.entrance_0.Lower(); //Lowers all the exits
-		this.entrance_1.Lower();
-		this.entrance_2.Lower();
-		this.entrance_3.Lower();
-		this.baldiTutor.SetActive(false); //Turns off Baldi(The one that you see at the start of the game)
-		this.baldi.SetActive(true); //Turns on Baldi
-        this.principal.SetActive(true); //Turns on Principal
-        this.crafters.SetActive(true); //Turns on Crafters
-        this.playtime.SetActive(true); //Turns on Playtime
-        this.gottaSweep.SetActive(true); //Turns on Gotta Sweep
-        this.bully.SetActive(true); //Turns on Bully
-        this.firstPrize.SetActive(true); //Turns on First-Prize
-		//this.TestEnemy.SetActive(true); //Turns on Test-Enemy
-		this.audioDevice.PlayOneShot(this.aud_Hang); //Plays the hang sound
+		if (PlayerPrefs.GetInt("FreeRun") == 0)
+		{
+			foreach (EntranceScript entrance in entrances) // Lowers all exits
+			{
+				entrance.Lower();
+			}
+		}
+		if (this.style != "glitch") // If style isn't Glitch Style
+		{
+			this.baldiTutor.SetActive(false); //Turns off Baldi(The one that you see at the start of the game)
+			if (PlayerPrefs.GetInt("FreeRun") == 0)
+			{
+				this.baldi.SetActive(true); //Turns on Baldi
+				this.audioDevice.PlayOneShot(this.aud_Hang); //Plays the hang sound
+			}
+			this.principal.SetActive(true); //Turns on Principal
+			this.crafters.SetActive(true); //Turns on Crafters
+			this.playtime.SetActive(true); //Turns on Playtime
+			this.gottaSweep.SetActive(true); //Turns on Gotta Sweep
+			this.bully.SetActive(true); //Turns on Bully
+			this.firstPrize.SetActive(true); //Turns on First-Prize
+			//this.TestEnemy.SetActive(true); //Turns on Test-Enemy
+		}
 		this.learnMusic.Stop(); //Stop all the music
 		this.schoolMusic.Stop();
 	}
@@ -243,10 +366,13 @@ public class GameControllerScript : MonoBehaviour
 	private void ActivateFinaleMode()
 	{
 		this.finaleMode = true;
-		this.entrance_0.Raise(); //Raise all the enterances(make them appear)
-		this.entrance_1.Raise();
-		this.entrance_2.Raise();
-		this.entrance_3.Raise();
+		if (PlayerPrefs.GetInt("FreeRun") == 0)
+		{
+			foreach (EntranceScript entrance in entrances) // Lowers all exits
+			{
+				entrance.Raise();
+			}
+		}
 	}
 
 	// Token: 0x0600096F RID: 2415 RVA: 0x000221F4 File Offset: 0x000205F4
@@ -266,7 +392,7 @@ public class GameControllerScript : MonoBehaviour
 		this.learningActive = true;
 		this.UnlockMouse(); //Unlock the mouse
 		this.tutorBaldi.Stop(); //Make tutor Baldi stop talking
-		if (!this.spoopMode) //If the player hasn't gotten a question wrong
+		if (!this.spoopMode & this.style != "glitch") //If the player hasn't gotten a question wrong
 		{
 			this.schoolMusic.Stop(); //Start playing the learn music
 			this.learnMusic.Play();
@@ -284,20 +410,43 @@ public class GameControllerScript : MonoBehaviour
 		{
 			this.player.stamina = 100f;
 		}
-		if (!this.spoopMode) //If it isn't spoop mode, play the school music
+		if (PlayerPrefs.GetInt("FreeRun") == 0)
 		{
-			this.schoolMusic.Play();
-			this.learnMusic.Stop();
+			if (!spoopMode & style != "glitch")
+			{
+				this.schoolMusic.Play();
+				this.learnMusic.Stop();
+			}
+			if (this.notebooks == 1 & !this.spoopMode & this.style != "glitch") // If this is the players first notebook and they didn't get any questions wrong, reward them with a quarter
+			{
+				this.quarter.SetActive(true);
+				this.tutorBaldi.PlayOneShot(this.aud_Prize);
+			}
+			else if (this.notebooks == 7 & this.mode == "story" & this.style != "glitch") // Plays the all 7 notebook sound
+			{
+				this.escapeMusic.clip = escapeVariants[0];
+				this.escapeMusic.loop = true;
+				this.escapeMusic.Play();
+				if (PlayerPrefs.GetInt("NullDefeated") >= 1)
+				{
+					this.audioDevice.PlayOneShot(this.aud_AllNotebooks, 0.8f);
+				}
+				else
+				{
+					this.audioDevice.PlayOneShot(this.aud_AllNotebooksNull, 0.8f);
+				}
+			}
 		}
-		if (this.notebooks == 1 & !this.spoopMode) // If this is the players first notebook and they didn't get any questions wrong, reward them with a quarter
+		else
 		{
-			this.quarter.SetActive(true);
-			this.tutorBaldi.PlayOneShot(this.aud_Prize);
+			if (this.notebooks == 7 & this.mode == "story" & this.style != "glitch") // Plays the all 7 notebook sound
+			{
+				this.escapeMusic.clip = escapeVariants[1];
+				this.escapeMusic.loop = true;
+				this.escapeMusic.Play();
+			}
 		}
-		else if (this.notebooks == 7 & this.mode == "story") // Plays the all 7 notebook sound
-		{
-			this.audioDevice.PlayOneShot(this.aud_AllNotebooks, 0.8f);
-		}
+
 	}
 
 	// Token: 0x06000972 RID: 2418 RVA: 0x00022360 File Offset: 0x00020760
@@ -471,6 +620,34 @@ public class GameControllerScript : MonoBehaviour
 				base.StartCoroutine(this.BootAnimation());
 				this.ResetItem();
 			}
+			else if (this.item[this.itemSelected] == 11)
+			{
+				this.audioDevice.PlayOneShot(this.aud_Whistle);
+				if (style != "glitch")
+				{
+					if (principal.activeSelf)
+					{
+						this.principal.GetComponent<PrincipalScript>().audioQueue.QueueAudio(this.aud_Coming);
+						this.principal.GetComponent<PrincipalScript>().Summoned();
+					}
+				}
+				else
+				{
+					if (baldi.activeSelf)
+					{
+						this.baldiScrpt.baldiWait = 0.005f;
+						this.baldiScrpt.summon = true;
+					}
+				}
+				this.ResetItem();
+			}
+			else if (this.item[this.itemSelected] == 12)
+			{
+				BoxCollider chalkCloud = UnityEngine.Object.Instantiate(ChalkCloud, playerTransform.position, Quaternion.identity);
+				Physics.IgnoreCollision(chalkCloud, playerCharacter);
+				chalkCloud.gameObject.transform.position += Vector3.up * 1f;
+				ResetItem();
+			}
 		}
 	}
 
@@ -540,28 +717,44 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x0600097B RID: 2427 RVA: 0x00022BD4 File Offset: 0x00020FD4
 	public void ExitReached()
 	{
+		if (exitsReached < entrances.Length - 1)
+		{
+			this.audioDevice.PlayOneShot(this.aud_Switch, 0.8f);
+		}
+		this.escapeMusic.pitch -= 0.12f;
 		this.exitsReached++;
-		if (this.exitsReached == 1)
+		if (this.exitsReached == 1 & this.style != "glitch")
 		{
 			RenderSettings.ambientLight = Color.red; //Make everything red and start player the weird sound
 			//RenderSettings.fog = true;
-			this.audioDevice.PlayOneShot(this.aud_Switch, 0.8f);
-			this.audioDevice.clip = this.aud_MachineQuiet;
-			this.audioDevice.loop = true;
-			this.audioDevice.Play();
 		}
-		if (this.exitsReached == 2) //Play a sound
+		if (this.exitsReached == 2 & this.style != "glitch") //Play a sound
 		{
 			this.audioDevice.volume = 0.8f;
-			this.audioDevice.clip = this.aud_MachineStart;
-			this.audioDevice.loop = true;
-			this.audioDevice.Play();
-		}
-		if (this.exitsReached == 3) //Play a even louder sound
-		{
-			this.audioDevice.clip = this.aud_MachineRev;
+			this.audioDevice.clip = this.ChaosEarlyLoopStart;
 			this.audioDevice.loop = false;
 			this.audioDevice.Play();
+		}
+		if (this.exitsReached == this.entrances.Length - 1) //Play a even louder sound
+		{
+			if (this.style != "glitch")
+			{
+				this.audioDevice.clip = this.ChaosBuildUp;
+				this.audioDevice.loop = false;
+				this.audioDevice.Play();
+			}
+			else
+			{
+				this.debugMode = true;
+				this.baldiScrpt.enabled = false;
+				this.bossController.ns.enabled = true;
+				this.bossController.ns.target = principal.transform;
+				this.bossController.ns.agent.speed = 100f;
+			}
+		}
+		if (this.exitsReached == this.entrances.Length & this.style == "glitch")
+		{
+			StartCoroutine(bossController.WaitForNULL());
 		}
 	}
 
@@ -583,6 +776,10 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x040005F7 RID: 1527
 	public CursorControllerScript cursorController;
 
+	public BossController bossController;
+
+	public float gameTime;
+
 	// Token: 0x040005F8 RID: 1528
 	public PlayerScript player;
 
@@ -598,17 +795,7 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x040005FC RID: 1532
 	private int cullingMask;
 
-	// Token: 0x040005FD RID: 1533
-	public EntranceScript entrance_0;
-
-	// Token: 0x040005FE RID: 1534
-	public EntranceScript entrance_1;
-
-	// Token: 0x040005FF RID: 1535
-	public EntranceScript entrance_2;
-
-	// Token: 0x04000600 RID: 1536
-	public EntranceScript entrance_3;
+	public EntranceScript[] entrances;
 
 	// Token: 0x04000601 RID: 1537
 	public GameObject baldiTutor;
@@ -627,6 +814,10 @@ public class GameControllerScript : MonoBehaviour
 
 	// Token: 0x04000606 RID: 1542
 	public AudioClip aud_AllNotebooks;
+
+	public AudioClip aud_AllNotebooksNull;
+
+	public AudioClip aud_NULLhaha;
 
 	// Token: 0x04000607 RID: 1543
 	public GameObject principal;
@@ -664,6 +855,8 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x04000611 RID: 1553
 	public RectTransform boots;
 
+	public string style;
+
 	// Token: 0x04000612 RID: 1554
 	public string mode;
 
@@ -691,6 +884,8 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x0400061A RID: 1562
 	public int exitsReached;
 
+	public int lastestExit;
+
 	// Token: 0x0400061B RID: 1563
 	public int itemSelected;
 
@@ -704,16 +899,18 @@ public class GameControllerScript : MonoBehaviour
 	private string[] itemNames = new string[]
 	{
 		"Nothing",
-		"Energy flavored Zesty Bar",
+		"Energy Flavored Zesty Bar",
 		"Yellow Door Lock",
 		"Principal's Keys",
 		"BSODA",
 		"Quarter",
-		"Baldi Anti Hearing and Disorienting Tape",
+		"Baldi's Least Favorite Tape",
 		"Alarm Clock",
-		"WD-NoSquee (Door Type)",
+		"WD-NoSquee",
 		"Safety Scissors",
-		"Big Ol' Boots"
+		"Big Ol' Boots",
+		"Principal Whistle",
+		"Dirty Chalk Eraser"
 	};
 
 	// Token: 0x0400061F RID: 1567
@@ -725,11 +922,17 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x04000621 RID: 1569
 	public Texture[] itemTextures = new Texture[10];
 
+	public GameObject chalkErasers;
+
 	// Token: 0x04000622 RID: 1570
 	public GameObject bsodaSpray;
 
 	// Token: 0x04000623 RID: 1571
 	public GameObject alarmClock;
+
+	public BoxCollider ChalkCloud;
+	
+	public CharacterController playerCharacter;
 
 	// Token: 0x04000624 RID: 1572
 	public TMP_Text notebookCount;
@@ -762,7 +965,7 @@ public class GameControllerScript : MonoBehaviour
 	private float gameOverDelay;
 
 	// Token: 0x0400062E RID: 1582
-	private AudioSource audioDevice;
+	public AudioSource audioDevice;
 
 	// Token: 0x0400062F RID: 1583
 	public AudioClip aud_Soda;
@@ -770,23 +973,31 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x04000630 RID: 1584
 	public AudioClip aud_Spray;
 
+	public AudioClip aud_Coming;
+
+	public AudioClip aud_Whistle;
+
 	// Token: 0x04000631 RID: 1585
-	public AudioClip aud_buzz;
+	public AudioClip[] aud_buzz;
+
+	public AudioClip aud_spoop;
 
 	// Token: 0x04000632 RID: 1586
 	public AudioClip aud_Hang;
 
 	// Token: 0x04000633 RID: 1587
-	public AudioClip aud_MachineQuiet;
+	public AudioClip ChaosEarlyLoopStart;
 
 	// Token: 0x04000634 RID: 1588
-	public AudioClip aud_MachineStart;
+	public AudioClip ChaosEarlyLoop;
 
 	// Token: 0x04000635 RID: 1589
-	public AudioClip aud_MachineRev;
+	public AudioClip ChaosBuildUp;
 
 	// Token: 0x04000636 RID: 1590
-	public AudioClip aud_MachineLoop;
+	public AudioClip ChaosFinalLoop;
+
+	public AudioClip[] escapeVariants;
 
 	// Token: 0x04000637 RID: 1591
 	public AudioClip aud_Switch;
@@ -797,6 +1008,10 @@ public class GameControllerScript : MonoBehaviour
 	// Token: 0x04000639 RID: 1593
 	public AudioSource learnMusic;
 
+	public AudioSource escapeMusic;
+
 	// Token: 0x0400063A RID: 1594
 	//private Player playerInput;
+
+	public string sceneName;
 }

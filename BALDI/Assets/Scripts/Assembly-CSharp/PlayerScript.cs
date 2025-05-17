@@ -147,9 +147,17 @@ public class PlayerScript : MonoBehaviour
 	{
 		if (other.transform.name == "Baldi" & !this.gc.debugMode)
 		{
+			this.gc.audioDevice.Stop();
 			this.gameOver = true;
 			RenderSettings.skybox = this.blackSky; //Sets the skybox black
 			base.StartCoroutine(this.KeepTheHudOff()); //Hides the Hud
+			if (UnityEngine.Random.Range(0, 99) <= 3)
+			{
+				if (gc.style == "glitch" & PlayerPrefs.GetInt("NullDefeated") == 0)
+				{
+					this.gc.audioDevice.PlayOneShot(this.gc.aud_NULLhaha);
+				}
+			}
 		}
 		else if (other.transform.name == "Playtime" & !this.jumpRope & this.playtime.playCool <= 0f)
 		{

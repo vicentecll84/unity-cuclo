@@ -4,6 +4,13 @@ using UnityEngine;
 // Token: 0x020000BD RID: 189
 public class EntranceScript : MonoBehaviour
 {
+	private void Update()
+	{
+		if (gc.style == "glitch" & gc.exitsReached >= gc.entrances.Length - 1 & gc.finaleMode)
+		{
+			barrier.enabled = true;
+		}
+	}
 	// Token: 0x0600095D RID: 2397 RVA: 0x000218F8 File Offset: 0x0001FCF8
 	public void Lower()
 	{
@@ -22,6 +29,12 @@ public class EntranceScript : MonoBehaviour
 
 	// Token: 0x040005F3 RID: 1523
 	public GameControllerScript gc;
+
+	public GameObject bossSpawn;
+
+	public BoxCollider barrier;
+
+	public int EntranceID;
 
 	// Token: 0x040005F4 RID: 1524
 	public Material map;

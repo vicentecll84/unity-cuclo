@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -8,15 +9,19 @@ public class ExitTriggerScript : MonoBehaviour
 	// Token: 0x06000962 RID: 2402 RVA: 0x000219A0 File Offset: 0x0001FDA0
 	private void OnTriggerEnter(Collider other)
 	{
-		if (this.gc.notebooks >= 7 & other.tag == "Player")
+		if (PlayerPrefs.GetInt("FreeRun") == 0)
 		{
-			if (this.gc.failedNotebooks >= 7) //If the player got all the problems wrong on all the 7 notebooks
+			if (this.gc.notebooks >= 7 & other.tag == "Player")
 			{
-				SceneManager.LoadScene("Secret"); //Go to the secret ending
-			}
-			else
-			{
-				SceneManager.LoadScene("Results"); //Go to the win screen
+				PlayerPrefs.SetInt("ClassicWon", 1);
+				if (this.gc.failedNotebooks >= 7) //If the player got all the problems wrong on all the 7 notebooks
+				{
+					SceneManager.LoadScene("Secret"); //Go to the secret ending
+				}
+				else
+				{
+					SceneManager.LoadScene("Results"); //Go to the win screen
+				}
 			}
 		}
 	}
